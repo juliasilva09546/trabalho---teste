@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -23,6 +22,7 @@
       <button class="nav-link active" data-view="inicio">Início</button>
       <button class="nav-link" data-view="nova">Nova indicação</button>
       <button class="nav-link" data-view="protocolos">Meus protocolos</button>
+      <button class="nav-link" data-view="publicas">Indicações dos moradores</button>
     </nav>
 
     <div class="account-actions">
@@ -34,7 +34,7 @@
   </header>
 
   <main class="container">
-    <!-- PÁGINA INICIAL -->
+    <!-- INÍCIO -->
     <section id="view-inicio" class="view">
       <div class="hero">
         <div class="hero-copy">
@@ -107,7 +107,7 @@
 
           <button class="quick-card" data-view="protocolos">
             <span class="quick-icon">▤</span>
-            <strong>Protocolo em espera</strong>
+            <strong>Meus protocolos</strong>
             <small>Consulte suas solicitações e atualizações.</small>
             <span class="card-arrow">→</span>
           </button>
@@ -153,35 +153,18 @@
           <span class="step-number">1</span>
           <div>
             <h2>Sobre a solicitação</h2>
-            <p>Escolha a secretaria relacionada ao problema.</p>
+            <p>Descreva o que precisa de atenção na sua região.</p>
           </div>
         </div>
 
-        <div class="field">
-          <label for="secretaria">
-            Secretaria responsável <span class="required">*</span>
-          </label>
-          <select id="secretaria" name="secretaria" required>
-            <option value="">Selecione uma secretaria</option>
-            <option value="SEMOP – Secretaria Municipal de Obras Públicas">
-              SEMOP – Secretaria Municipal de Obras Públicas
-            </option>
-            <option value="SUMTRAN – Superintendência Municipal de Trânsito">
-              SUMTRAN – Superintendência Municipal de Trânsito
-            </option>
-            <option value="SEMMADESP – Secretaria Municipal de Meio Ambiente, Desenvolvimento Rural e Pesca">
-              SEMMADESP – Secretaria Municipal de Meio Ambiente, Desenvolvimento Rural e Pesca
-            </option>
-            <option value="SEMSU – Secretaria Municipal de Serviços Urbanos">
-              SEMSU – Secretaria Municipal de Serviços Urbanos
-            </option>
-            <option value="SEMEDI – Secretaria Municipal de Educação e Ensino Integral">
-              SEMEDI – Secretaria Municipal de Educação e Ensino Integral
-            </option>
-            <option value="SEMSA – Secretaria Municipal de Saúde">
-              SEMSA – Secretaria Municipal de Saúde
-            </option>
-          </select>
+        <div id="citizenSummary" class="citizen-summary">
+          <p>
+            Para registrar uma indicação, preencha primeiro seu cadastro
+            com nome, CEP, bairro, rua, número e telefone.
+          </p>
+          <button type="button" class="button button-outline" data-view="perfil">
+            Cadastrar meus dados
+          </button>
         </div>
 
         <div class="field">
@@ -207,21 +190,35 @@
 
         <div class="field-grid address-grid">
           <div class="field field-street">
-            <label for="rua">Rua / avenida <span class="required">*</span></label>
-            <input id="rua" name="rua" maxlength="120"
-              placeholder="Nome da rua ou avenida" required>
+            <label for="localRua">Rua / avenida <span class="required">*</span></label>
+            <input
+              id="localRua"
+              name="localRua"
+              maxlength="120"
+              placeholder="Nome da rua ou avenida"
+              required
+            >
           </div>
 
           <div class="field">
-            <label for="numero">Número / referência</label>
-            <input id="numero" name="numero" maxlength="40"
-              placeholder="Nº ou ponto de referência">
+            <label for="localNumero">Número / referência</label>
+            <input
+              id="localNumero"
+              name="localNumero"
+              maxlength="40"
+              placeholder="Nº ou ponto de referência"
+            >
           </div>
 
           <div class="field">
-            <label for="bairro">Bairro <span class="required">*</span></label>
-            <input id="bairro" name="bairro" maxlength="100"
-              placeholder="Nome do bairro" required>
+            <label for="localBairro">Bairro <span class="required">*</span></label>
+            <input
+              id="localBairro"
+              name="localBairro"
+              maxlength="100"
+              placeholder="Nome do bairro"
+              required
+            >
           </div>
         </div>
 
@@ -301,12 +298,12 @@
       </form>
     </section>
 
-    <!-- ACOMPANHAMENTO DOS PROTOCOLOS -->
+    <!-- MEUS PROTOCOLOS -->
     <section id="view-protocolos" class="view hidden">
       <div class="page-heading">
         <span class="eyebrow">PROCESSOS / ACOMPANHAMENTO</span>
         <h1>Meus protocolos</h1>
-        <p>Consulte a data, a secretaria responsável e o status das suas indicações.</p>
+        <p>Consulte a data, o local e o status das suas indicações.</p>
       </div>
 
       <div class="filter-bar">
@@ -335,7 +332,35 @@
       </p>
     </section>
 
-    <!-- PERFIL DO CIDADÃO -->
+    <!-- INDICAÇÕES DOS MORADORES: SOMENTE VISUALIZAÇÃO -->
+    <section id="view-publicas" class="view hidden">
+      <div class="page-heading">
+        <span class="eyebrow">TRANSPARÊNCIA / COMUNIDADE</span>
+        <h1>Indicações dos moradores</h1>
+        <p>
+          Consulte as solicitações registradas pela comunidade.
+          Esta área é somente para visualização.
+        </p>
+      </div>
+
+      <div class="privacy-note public-privacy-note">
+        <span>ⓘ</span>
+        <p>
+          Para proteger a privacidade, esta lista não exibe nome,
+          telefone nem outros dados pessoais de quem enviou a indicação.
+        </p>
+      </div>
+
+      <div id="publicProtocols" class="protocol-list"></div>
+
+      <p class="demo-note">
+        Demonstração: as indicações aparecem aqui quando são registradas
+        neste navegador. Para que moradores de diferentes dispositivos
+        vejam as mesmas indicações, conecte o portal a um banco de dados online.
+      </p>
+    </section>
+
+    <!-- CADASTRO DO CIDADÃO -->
     <section id="view-perfil" class="view hidden">
       <div class="page-heading">
         <span class="eyebrow">CONTA / MEU PERFIL</span>
@@ -345,29 +370,89 @@
 
       <form id="profileForm" class="form-card profile-form">
         <div class="field">
-          <label for="nome">Nome completo</label>
-          <input id="nome" name="nome" maxlength="120" placeholder="Seu nome">
+          <label for="nome">Nome completo <span class="required">*</span></label>
+          <input
+            id="nome"
+            name="nome"
+            maxlength="120"
+            placeholder="Seu nome completo"
+            autocomplete="name"
+            required
+          >
+        </div>
+
+        <div class="field-grid address-grid">
+          <div class="field">
+            <label for="cep">CEP <span class="required">*</span></label>
+            <input
+              id="cep"
+              name="cep"
+              maxlength="9"
+              inputmode="numeric"
+              placeholder="00000-000"
+              autocomplete="postal-code"
+              required
+            >
+          </div>
+
+          <div class="field">
+            <label for="bairro">Bairro <span class="required">*</span></label>
+            <input
+              id="bairro"
+              name="bairro"
+              maxlength="100"
+              placeholder="Seu bairro"
+              autocomplete="address-level3"
+              required
+            >
+          </div>
+
+          <div class="field">
+            <label for="rua">Rua / avenida <span class="required">*</span></label>
+            <input
+              id="rua"
+              name="rua"
+              maxlength="120"
+              placeholder="Nome da rua"
+              autocomplete="street-address"
+              required
+            >
+          </div>
+
+          <div class="field">
+            <label for="numero">Número <span class="required">*</span></label>
+            <input
+              id="numero"
+              name="numero"
+              maxlength="20"
+              placeholder="Nº da residência"
+              required
+            >
+          </div>
         </div>
 
         <div class="field">
-          <label for="email">E-mail</label>
-          <input id="email" name="email" type="email" maxlength="150"
-            placeholder="voce@exemplo.com">
-        </div>
-
-        <div class="field">
-          <label for="telefone">Telefone (opcional)</label>
-          <input id="telefone" name="telefone" type="tel" maxlength="25"
-            placeholder="(00) 00000-0000">
+          <label for="telefone">Telefone para contato <span class="required">*</span></label>
+          <input
+            id="telefone"
+            name="telefone"
+            type="tel"
+            maxlength="25"
+            placeholder="(00) 00000-0000"
+            autocomplete="tel"
+            required
+          >
         </div>
 
         <div class="form-actions">
-          <button class="button button-primary" type="submit">Salvar perfil</button>
+          <button class="button button-primary" type="submit">
+            Salvar cadastro
+          </button>
         </div>
 
         <p class="small-note">
-          Este protótipo não realiza cadastro nem autenticação real.
-          Não informe senhas ou dados sensíveis.
+          Este protótipo salva seus dados apenas neste navegador.
+          Não é um cadastro online seguro.
         </p>
       </form>
     </section>
