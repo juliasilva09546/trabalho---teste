@@ -1,6 +1,5 @@
-
-const STORAGE_KEY = "portalIndicacoesDemo_v1";
-const PROFILE_KEY = "portalIndicacoesProfile_v1";
+const STORAGE_KEY = "portalIndicacoesDemo_v2";
+const PROFILE_KEY = "portalIndicacoesProfile_v2";
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 const $ = (selector) => document.querySelector(selector);
@@ -35,7 +34,7 @@ function saveProfile(profile) {
   localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
 }
 
-// PROTEÇÃO DE TEXTO EXIBIDO NA PÁGINA
+// SEGURANÇA BÁSICA PARA EXIBIÇÃO DE TEXTO
 
 function escapeHTML(value = "") {
   return String(value).replace(/[&<>"']/g, (char) => ({
@@ -47,7 +46,7 @@ function escapeHTML(value = "") {
   })[char]);
 }
 
-// MENSAGENS NA TELA
+// AVISOS NA TELA
 
 function showToast(message) {
   const toast = $("#toast");
@@ -62,10 +61,30 @@ function showToast(message) {
   }, 3600);
 }
 
-// NAVEGAÇÃO ENTRE AS PÁGINAS
+// VERIFICAR SE O CADASTRO ESTÁ COMPLETO
+
+function profileComplete(profile = loadProfile()) {
+  return Boolean(
+    profile.nome?.trim() &&
+    profile.cep?.trim() &&
+    profile.bairro?.trim() &&
+    profile.rua?.trim() &&
+    profile.numero?.trim() &&
+    profile.telefone?.trim()
+  );
+}
+
+// NAVEGAÇÃO ENTRE AS TELAS
 
 function goToView(name) {
   const target = name === "perfil" ? "perfil" : name;
+
+  // Exige cadastro antes de criar uma indicação.
+  if (target === "nova" && !profileComplete()) {
+    showToast("Para registrar uma indicação, faça seu cadastro primeiro.");
+    goToView("perfil");
+    return;
+  }
 
   $$(".view").forEach((view) => {
     view.classList.toggle("hidden", view.id !== `view-${target}`);
@@ -80,13 +99,10 @@ function goToView(name) {
     behavior: "smooth"
   });
 
-  if (target === "protocolos") {
-    renderProtocols();
-  }
-
-  if (target === "inicio") {
-    renderHome();
-  }
+  if (target === "protocolos") renderProtocols();
+  if (target === "inicio") renderHome();
+  if (target === "publicas") renderPublicProtocols();
+  if (target === "nova") renderCitizenSummary();
 }
 
 $$("[data-view]").forEach((button) => {
@@ -103,37 +119,28 @@ $("#profileQuick").addEventListener("click", () => {
   goToView("perfil");
 });
 
-// DATA DO PROTOCOLO
+// FORMATAÇÃO E STATUS DOS PROTOCOLOS
 
 function formatDate(iso) {
   if (!iso) return "—";
 
   const date = new Date(iso);
 
-  if (Number.isNaN(date.getTime())) {
-    return "—";
-  }
+  if (Number.isNaN(date.getTime())) return "—";
 
   return new Intl.DateTimeFormat("pt-BR").format(date);
 }
 
-// CLASSE VISUAL DE CADA STATUS
-
 function statusClass(status) {
-  if (status === "Aceito") {
-    return "status-aceito";
-  }
-
-  if (status === "Não aprovado") {
-    return "status-nao-aprovado";
-  }
+  if (status === "Aceito") return "status-aceito";
+  if (status === "Não aprovado") return "status-nao-aprovado";
 
   return "";
 }
 
-// MONTAR O CARTÃO DO PROTOCOLO
+// MONTAR OS CARTÕES DE PROTOCOLO
 
-function protocolMarkup(item, showDetails = true) {
+function protocolMarkup(item, showDetails = true, publicView = false) {
   const location = [
     item.rua,
     item.numero ? `nº ${item.numero}` : "",
@@ -156,28 +163,45 @@ function protocolMarkup(item, showDetails = true) {
         <h3>${escapeHTML(item.assunto)}</h3>
 
         <p>
-          <strong>Secretaria:</strong>
-          ${escapeHTML(item.secretaria)}
-        </p>
-
-        <p>
           <strong>Local:</strong>
-          ${escapeHTML(location)}
+          ${escapeHTML(location || "Local não informado")}
         </p>
 
-        ${showDetails ? `
-          <div class="protocol-detail">
-            <strong>Justificativa:</strong>
-            ${escapeHTML(item.justificativa)}
+        ${
+          publicView
+            ? `<p><strong>Morador:</strong> Indicação comunitária</p>`
+            : ""
+        }
 
-            ${item.imageName ? `
-              <p>
-                <strong>Foto anexada:</strong>
-                ${escapeHTML(item.imageName)}
-              </p>
-            ` : ""}
-          </div>
-        ` : ""}
+        ${
+          showDetails
+            ? `
+              <div class="protocol-detail">
+                <strong>Justificativa:</strong>
+                <p>${escapeHTML(item.justificativa)}</p>
+
+                ${
+                  item.imageName
+                    ? `<p><strong>Foto anexada:</strong> ${escapeHTML(item.imageName)}</p>`
+                    : ""
+                }
+
+                ${
+                  item.imageData && publicView
+                    ? `
+                      <img
+                        class="public-photo"
+                        src="${item.imageData}"
+                        alt="Foto anexada à indicação"
+                        loading="lazy"
+                      >
+                    `
+                    : ""
+                }
+              </div>
+            `
+            : ""
+        }
       </div>
 
       <div class="protocol-meta">
@@ -188,25 +212,28 @@ function protocolMarkup(item, showDetails = true) {
   `;
 }
 
-// QUANDO AINDA NÃO EXISTEM PROTOCOLOS
-
 function emptyMarkup() {
   return `
     <div class="empty-state">
       <div class="empty-icon">▤</div>
-
       <h3>Nenhuma indicação encontrada</h3>
-
       <p>
-        Quando você registrar uma indicação,
-        ela aparecerá aqui para acompanhamento.
+        Quando houver indicações registradas,
+        elas aparecerão aqui para acompanhamento.
       </p>
-
       <button class="button button-primary" data-view="nova">
         Registrar indicação
       </button>
     </div>
   `;
+}
+
+function bindViewButtons(root) {
+  root.querySelectorAll("[data-view]").forEach((button) => {
+    button.addEventListener("click", () => {
+      goToView(button.dataset.view);
+    });
+  });
 }
 
 // ATUALIZAR A PÁGINA INICIAL
@@ -219,25 +246,21 @@ function renderHome() {
   $("#statTotal").textContent = items.length;
 
   $("#statPending").textContent = items.filter(
-    item => item.status === "Em espera"
+    (item) => item.status === "Em espera"
   ).length;
 
   $("#statAccepted").textContent = items.filter(
-    item => item.status === "Aceito"
+    (item) => item.status === "Aceito"
   ).length;
 
   $("#recentList").innerHTML = items.length
-    ? items.slice(0, 3).map(item => protocolMarkup(item, false)).join("")
+    ? items.slice(0, 3).map((item) => protocolMarkup(item, false)).join("")
     : emptyMarkup();
 
-  $("#recentList").querySelectorAll("[data-view]").forEach((button) => {
-    button.addEventListener("click", () => {
-      goToView(button.dataset.view);
-    });
-  });
+  bindViewButtons($("#recentList"));
 }
 
-// PESQUISA E FILTRO DOS PROTOCOLOS
+// MOSTRAR OS PROTOCOLOS
 
 function renderProtocols() {
   const search = ($("#protocolSearch").value || "")
@@ -254,30 +277,45 @@ function renderProtocols() {
         ${item.assunto}
         ${item.bairro}
         ${item.rua}
-        ${item.secretaria}
       `.toLocaleLowerCase("pt-BR");
 
-      return (
-        (!search || text.includes(search)) &&
-        (!status || item.status === status)
-      );
+      return (!search || text.includes(search)) &&
+        (!status || item.status === status);
     });
 
   $("#allProtocols").innerHTML = items.length
-    ? items.map(item => protocolMarkup(item, true)).join("")
+    ? items.map((item) => protocolMarkup(item, true)).join("")
     : emptyMarkup();
 
-  $("#allProtocols").querySelectorAll("[data-view]").forEach((button) => {
-    button.addEventListener("click", () => {
-      goToView(button.dataset.view);
-    });
-  });
+  bindViewButtons($("#allProtocols"));
 }
+
+// ABA PÚBLICA: SOMENTE VISUALIZAÇÃO
+
+function renderPublicProtocols() {
+  const items = loadProtocols().sort(
+    (a, b) => new Date(b.data) - new Date(a.data)
+  );
+
+  $("#publicProtocols").innerHTML = items.length
+    ? items.map((item) => protocolMarkup(item, true, true)).join("")
+    : `
+      <div class="empty-state">
+        <div class="empty-icon">▤</div>
+        <h3>Ainda não há indicações públicas</h3>
+        <p>
+          As indicações registradas serão exibidas aqui para consulta.
+        </p>
+      </div>
+    `;
+}
+
+// PESQUISA E FILTRO
 
 $("#protocolSearch").addEventListener("input", renderProtocols);
 $("#statusFilter").addEventListener("change", renderProtocols);
 
-// SELEÇÃO E VALIDAÇÃO DA FOTO
+// CONTROLE DA FOTO
 
 function resetImage() {
   selectedImageData = "";
@@ -333,29 +371,75 @@ $("#foto").addEventListener("change", (event) => {
 
 $("#removeImage").addEventListener("click", resetImage);
 
-// CONTADOR DE CARACTERES DA JUSTIFICATIVA
+// CONTADOR DE CARACTERES
 
 $("#justificativa").addEventListener("input", () => {
   $("#charCount").textContent =
     `${$("#justificativa").value.length}/1500`;
 });
 
-// CRIAR E REGISTRAR UMA NOVA INDICAÇÃO
+// EXIBIR OS DADOS CADASTRADOS ANTES DA INDICAÇÃO
+
+function renderCitizenSummary() {
+  const profile = loadProfile();
+  const summary = $("#citizenSummary");
+
+  if (!profileComplete(profile)) {
+    summary.innerHTML = `
+      <p>
+        Para registrar uma indicação, preencha primeiro seu cadastro
+        com nome, CEP, bairro, rua, número e telefone.
+      </p>
+
+      <button
+        type="button"
+        class="button button-outline"
+        data-view="perfil"
+      >
+        Cadastrar meus dados
+      </button>
+    `;
+
+    bindViewButtons(summary);
+    return;
+  }
+
+  summary.innerHTML = `
+    <p>
+      <strong>Cadastro identificado:</strong>
+      ${escapeHTML(profile.nome)} · ${escapeHTML(profile.telefone)}
+    </p>
+
+    <p>
+      ${escapeHTML(profile.rua)}, nº ${escapeHTML(profile.numero)}
+      — ${escapeHTML(profile.bairro)}, CEP ${escapeHTML(profile.cep)}
+    </p>
+
+    <button type="button" class="text-button" data-view="perfil">
+      Atualizar cadastro
+    </button>
+  `;
+
+  bindViewButtons(summary);
+}
+
+// ENVIAR NOVA INDICAÇÃO
 
 $("#indicationForm").addEventListener("submit", (event) => {
   event.preventDefault();
 
   const form = event.currentTarget;
 
-  if (!form.reportValidity()) {
+  if (!profileComplete()) {
+    showToast("Faça seu cadastro antes de enviar a indicação.");
+    goToView("perfil");
     return;
   }
 
-  if (!selectedImageData) {
-    showToast(
-      "A foto é obrigatória. Selecione uma imagem antes de enviar."
-    );
+  if (!form.reportValidity()) return;
 
+  if (!selectedImageData) {
+    showToast("A foto é obrigatória. Selecione uma imagem antes de enviar.");
     $("#foto").focus();
     return;
   }
@@ -367,37 +451,30 @@ $("#indicationForm").addEventListener("submit", (event) => {
     return;
   }
 
+  const profile = loadProfile();
   const items = loadProtocols();
   const now = new Date();
 
   const protocol = {
     id: `IND-${now.getFullYear()}-${String(Date.now()).slice(-6)}`,
     data: now.toISOString(),
-
-    secretaria: $("#secretaria").value,
     assunto: $("#assunto").value.trim(),
-
-    rua: $("#rua").value.trim(),
-    numero: $("#numero").value.trim(),
-    bairro: $("#bairro").value.trim(),
-
+    rua: $("#localRua").value.trim(),
+    numero: $("#localNumero").value.trim(),
+    bairro: $("#localBairro").value.trim(),
     justificativa: $("#justificativa").value.trim(),
-
     imageName: file.name,
     imageData: selectedImageData,
-
-    status: "Em espera"
+    status: "Em espera",
+    citizenName: profile.nome
   };
 
   items.unshift(protocol);
 
   try {
     saveProtocols(items);
-  } catch (error) {
-    showToast(
-      "Não foi possível salvar. A imagem pode ser grande para " +
-      "o armazenamento local; tente uma imagem menor."
-    );
+  } catch {
+    showToast("Não foi possível salvar. Tente uma imagem menor.");
     return;
   }
 
@@ -407,46 +484,71 @@ $("#indicationForm").addEventListener("submit", (event) => {
   $("#charCount").textContent = "0/1500";
 
   renderHome();
+  renderCitizenSummary();
 
   showToast(`Indicação registrada! Protocolo: ${protocol.id}`);
 
   goToView("protocolos");
 });
 
-// PERFIL DO CIDADÃO
+// CARREGAR O CADASTRO DO CIDADÃO
 
 function populateProfile() {
   const profile = loadProfile();
 
-  $("#nome").value = profile.nome || "";
-  $("#email").value = profile.email || "";
-  $("#telefone").value = profile.telefone || "";
+  ["nome", "cep", "bairro", "rua", "numero", "telefone"].forEach((key) => {
+    const field = $("#" + key);
+
+    if (field) {
+      field.value = profile[key] || "";
+    }
+  });
 
   $("#welcomeLabel").textContent = profile.nome
     ? `Olá, ${profile.nome.split(" ")[0]}`
     : "Área do cidadão";
 }
 
+// SALVAR O CADASTRO
+
 $("#profileForm").addEventListener("submit", (event) => {
   event.preventDefault();
 
-  if (!event.currentTarget.reportValidity()) {
-    return;
-  }
+  if (!event.currentTarget.reportValidity()) return;
 
   const profile = {
     nome: $("#nome").value.trim(),
-    email: $("#email").value.trim(),
+    cep: $("#cep").value.trim(),
+    bairro: $("#bairro").value.trim(),
+    rua: $("#rua").value.trim(),
+    numero: $("#numero").value.trim(),
     telefone: $("#telefone").value.trim()
   };
 
   saveProfile(profile);
-  populateProfile();
 
-  showToast("Perfil atualizado neste navegador.");
+  populateProfile();
+  renderCitizenSummary();
+
+  showToast("Cadastro salvo neste navegador.");
+
+  goToView("nova");
 });
 
-// INICIALIZAÇÃO DO PORTAL
+// FORMATAR O CEP
+
+$("#cep").addEventListener("input", (event) => {
+  let value = event.target.value.replace(/\D/g, "").slice(0, 8);
+
+  if (value.length > 5) {
+    value = value.slice(0, 5) + "-" + value.slice(5);
+  }
+
+  event.target.value = value;
+});
+
+// INICIALIZAÇÃO DO SITE
 
 populateProfile();
 renderHome();
+renderCitizenSummary();
